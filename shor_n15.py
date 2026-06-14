@@ -56,22 +56,18 @@ def controlledU (a, power,ntrab,N):
         raise ValueError("a debe ser coprimo con N")
     U=QuantumCircuit(ntrab)
     for i in range (power):
-        if a in [2, 13]:
-            U.swap(2, 3)
-            U.swap(1, 2)
-            U.swap(0, 1)
-
-        elif a in [7, 8]:
-            U.swap(0, 1)
-            U.swap(1, 2)
-            U.swap(2, 3)
-    
-        elif a in [4, 11]:
-            U.swap(0, 2)
-            U.swap(1, 3)
-            
-    
-        if a in [7, 11, 13]:
+        if a in [2,13]:
+            U.swap(0,1)
+            U.swap(1,2)
+            U.swap(2,3)
+        elif a in [7,8]:
+            U.swap(2,3)
+            U.swap(1,2)
+            U.swap(0,1)
+        elif a in [4,11]:
+            U.swap(1,3)
+            U.swap(0,2)
+        if a in [7,11,13]:
             for q in range(4):
                 U.x(q)
     U = U.to_gate()

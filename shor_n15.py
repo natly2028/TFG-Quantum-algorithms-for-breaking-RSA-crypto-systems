@@ -1,6 +1,6 @@
 # This code requires Qiskit and Qiskit Aer to be installed.
 
-# Import the qiskit library
+# Import the qiskit library and other dependencies
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 from qiskit.quantum_info import Statevector
@@ -18,7 +18,7 @@ from fractions import Fraction
 %matplotlib inline
 
 
-
+# Classical pre-processing
 def classical_shor_pre_15():
     N=15
     #Check if N is a valid prime number
@@ -50,6 +50,8 @@ def classical_shor_pre_15():
     return None, (a,N)  # None indica que seguimos
 
 
+
+#Modular exponentiaition
 def controlledU (a, power,ntrab,N):
     g = math.gcd(a, N)
     if g!=1:
@@ -76,6 +78,8 @@ def controlledU (a, power,ntrab,N):
     return c_U
 
 
+
+# Quantum Fourier Transform
 def qft(n):
     qc = QuantumCircuit(n)
     for j in range(n-1, -1, -1):  
@@ -89,17 +93,18 @@ def qft(n):
     return qc
 
 
+# Execute together to obtain Shor's algorithm
 def shor_main():
 
     factors, params = classical_shor_pre_15()
 
-    # Caso 1:clásicamente
+    # Casse 1:classically
     if factors is not None:
         p, q = factors
         print(f"Factorización encontrada sin cuántica: {p} * {q} = {p*q}")
         return factors, None, None, None, None
 
-    # Caso 2:Shor cuántico
+    # Case 2: Quantum Shor
     else:
         a, N = params
         ncontrol = math.ceil(2 * math.log2(N))
@@ -109,13 +114,13 @@ def shor_main():
         for q in range (ncontrol):
             qc.h(q)
 
-        trab_qb = list(range(ncontrol, ncontrol + ntrab)) #Seleccionar qubits del registro de trabajo
+        trab_qb = list(range(ncontrol, ncontrol + ntrab)) #Select qubits from the work register
         for q in range (ncontrol):
             power = 2**q
             qc.append(controlledU(a, power,ntrab, N), [q] + trab_qb)
-            #qc.h(q)
+            
         
-        qc.append(qft(ncontrol).inverse(), range(ncontrol))
+        qc.append(qft(ncontrol).inverse(), range(ncontrol)) # Inverse Quantum Fourier Transform
         
         for n in range(ncontrol):
             qc.measure(n, n)
@@ -127,10 +132,11 @@ factors, qc, a, N, ncontrol = shor_main()
 
 if factors is not None:
     p, q = factors
-    print("Resultado final:", p, q)
+    print("Final Result:", p, q)
 
+# Run the quantum circuit
 else:
-    print("Circuito listo para ejecutar")
+    print("Executing circuit")
     qc_fig = qc.draw("mpl", scale=0.45, fold=-1)
     qc_fig
     
@@ -149,7 +155,7 @@ else:
     plot_histogram(counts, title=f"N = {N}, a = {a}", figsize=(6,6))
     plt.show()
 
-    # candidate bitstrings ordered by probability (highest first), excluding all-zeros
+    # Candidate bitstrings ordered by probability (highest first), excluding all-zeros
     candidates = sorted(
         (k for k in counts if k != "0" * ncontrol),
         key=counts.get,
@@ -160,33 +166,32 @@ else:
     measured_str = None
     p = q = None
 
-    # walk down the list: most probable -> least probable,
-    # accept the first bitstring whose r actually yields non-trivial factors
+    # Walk down the list: most probable -> least probable and accept the first bitstring whose r satisfies the conditions
     for cand in candidates:
         s = int(cand, 2)
         frac = Fraction(s, 2 ** ncontrol).limit_denominator(N)
         r_candidate = frac.denominator
 
-        # condition 1: r must be a real period -> a^r ≡ 1 (mod N)
+        # condition 1
         if pow(a, r_candidate, N) != 1:
             print(f"bitstring = {cand}, s = {s}, r = {r_candidate} "
                   f"-> incorrect value of r (a^r mod N != 1)")
             continue
 
-        # condition 2: r must be even, so r/2 is an integer
+        # condition 2
         if r_candidate % 2 != 0:
             print(f"bitstring = {cand}, s = {s}, r = {r_candidate} "
                   f"-> incorrect value of r (r is odd)")
             continue
 
-        # condition 3: a^(r/2) must NOT be -1 (mod N), else factors are trivial
+        # condition 3
         x = pow(a, r_candidate // 2, N)
         if x == N - 1:
             print(f"bitstring = {cand}, s = {s}, r = {r_candidate} "
                   f"-> incorrect value of r (a^(r/2) = -1 mod N)")
             continue
 
-        # all conditions met -> extract the factors
+        # Extract factors
         p_candidate = math.gcd(x - 1, N)
         q_candidate = math.gcd(x + 1, N)
 
@@ -195,7 +200,7 @@ else:
                   f"-> incorrect value of r (trivial factors)")
             continue
 
-        # valid candidate -> accept it and stop
+        #
         print(f"bitstring = {cand}, s = {s}, r = {r_candidate} -> correct value of r")
         r = r_candidate
         measured_str = cand

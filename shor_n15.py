@@ -145,7 +145,7 @@ else:
     pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
     isa_qc = pm.run(qc)
 
-    sampler = Sampler()
+    sampler = Sampler(mode=backend)
     job = sampler.run([isa_qc], shots=1024)
     result = job.result()
 
